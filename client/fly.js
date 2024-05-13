@@ -146,6 +146,79 @@ export async function arrayFromAsyncGenerator(generator) {
   return items
 }
 
+const appsWithRolesQuery = graphqlClient.createQuery(
+  `#graphql
+    query AppsWithRoles($after: String, $role: String) {
+      apps(after: $after, role: $role) {
+        edges {
+          node {
+            id
+            role {
+              __typename
+            }
+          }
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+  `,
+  z.object({
+    apps: z.object({
+      edges: z.array(
+        z.object({
+          node: z.object({
+            id: z.string(),
+            role: z
+              .object({
+                __typename: z.string()
+              })
+              .nullable()
+          })
+        })
+      ),
+      pageInfo: z.object({
+        hasNextPage: z.boolean(),
+        endCursor: z.string().nullable()
+      })
+    })
+  }),
+  z.object({ after: z.string().nullish(), role: z.string().nullish() })
+)
+
+/**
+ * @param {string} role
+ */
+export async function getAppsWithRole(role) {
+  return arrayFromAsyncGenerator(
+    relayConnectionAll((after) =>
+      appsWithRolesQuery({ after, role }).then((data) => data.apps)
+    )
+  )
+}
+
+const appWithRolesQuery = graphqlClient.createQuery(
+  `#graphql
+    query AppsWithRoles($name: String) {
+      app(name: $name) {
+        id
+        role {
+          __typename
+        }
+      }
+    }
+  `,
+  z.object({
+    app: z.object({
+      id: z.string(),
+      role: z.object({ __typename: z.string() }).nullable()
+    })
+  }),
+  z.object({ after: z.string().nullish(), role: z.string().nullish() })
+)
+
 const appSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -252,10 +325,20 @@ const machineSchema = z
 const machinesSchema = z.array(machineSchema)
 
 /**
+ * @param {TemplateStringsArray} strings
+ * @param  {...string} exprs
+ */
+function uri(strings, ...exprs) {
+  return strings.reduce(
+    (str, part, i) => str + encodeURIComponent(exprs[i - 1]) + part
+  )
+}
+
+/**
  * @param {string} appName
  */
 function machinesBaseURL(appName) {
-  return `/api/fly/machines/v1/apps/${encodeURIComponent(appName)}/machines`
+  return uri`/api/fly/machines/v1/apps/${appName}/machines`
 }
 
 /**
@@ -263,7 +346,22 @@ function machinesBaseURL(appName) {
  * @param {string} machineId
  */
 function machineBaseURL(appName, machineId) {
-  return `${machinesBaseURL(appName)}/${encodeURIComponent(machineId)}`
+  return uri`/api/fly/machines/v1/apps/${appName}/machines/${machineId}`
+}
+
+/**
+ * @param {string} appName
+ */
+function volumesBaseURL(appName) {
+  return uri`/api/fly/machines/v1/apps/${appName}/volumes`
+}
+
+/**
+ * @param {string} appName
+ * @param {string} volumeId
+ */
+function volumeBaseURL(appName, volumeId) {
+  return uri`/api/fly/machines/v1/apps/${appName}/volumes/${volumeId}`
 }
 
 /**
@@ -420,6 +518,112 @@ export async function waitForState(
       `Error waiting for machine state "${state ?? 'started'}" for ${appName}:${machineId}`
     ),
     { res, appName, machineId }
+  )
+}
+
+/** @typedef {z.infer<typeof volumeSchema>} Volume */
+
+const volumeSchema = z.object({
+  attached_alloc_id: z.string().nullable(),
+  attached_machine_id: z.string(),
+  auto_backup_enabled: z.boolean(),
+  block_size: z.number(),
+  blocks: z.number(),
+  blocks_avail: z.number(),
+  blocks_free: z.number(),
+  created_at: z.string(),
+  encrypted: z.boolean(),
+  fstype: z.string(),
+  host_status: z.string(),
+  id: z.string(),
+  name: z.string(),
+  region: z.string(),
+  size_gb: z.number(),
+  snapshot_retention: z.number(),
+  state: z.string(),
+  zone: z.string()
+})
+
+const volumesSchema = z.array(volumeSchema)
+
+/**
+ * @param {string} appName
+ */
+export async function listAppVolumes(appName) {
+  const res = await fetch(volumesBaseURL(appName), {
+    credentials: 'same-origin'
+  })
+  if (res.ok) return volumesSchema.parse(await res.json())
+  throw Object.assign(new Error(`Error fetching volumes for ${appName}`), {
+    res,
+    appName
+  })
+}
+
+const extendVolumeSchema = z.object({
+  needs_restart: z.boolean(),
+  volume: volumeSchema
+})
+
+/**
+ * @param {string} appName
+ * @param {string} volumeId
+ * @param {object} params
+ * @param {number} params.sizeGb
+ */
+export async function extendVolume(appName, volumeId, { sizeGb }) {
+  const res = await fetch(`${volumeBaseURL(appName, volumeId)}/extend`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ size_gb: sizeGb }),
+    credentials: 'same-origin'
+  })
+  if (res.ok) return extendVolumeSchema.parse(await res.json())
+  throw Object.assign(
+    new Error(`Error extending for ${appName} volume ${volumeId} `),
+    { res, appName, volumeId, sizeGb }
+  )
+}
+
+const snapshotSchema = z.object({
+  created_at: z.string(),
+  digest: z.string(),
+  id: z.string(),
+  retention_days: z.number(),
+  size: z.number(),
+  status: z.string()
+})
+
+const snapshotsSchema = z.array(snapshotSchema)
+
+/**
+ * @param {string} appName
+ * @param {string} volumeId
+ */
+export async function listVolumeSnapshots(appName, volumeId) {
+  const res = await fetch(`${volumeBaseURL(appName, volumeId)}/snapshots`, {
+    credentials: 'same-origin'
+  })
+  if (res.ok) return snapshotsSchema.parse(await res.json())
+  throw Object.assign(
+    new Error(`Error listing snapshots for ${appName} volume ${volumeId}`),
+    { res, appName, volumeId }
+  )
+}
+
+/**
+ * @param {string} appName
+ * @param {string} volumeId
+ */
+export async function createSnapshot(appName, volumeId) {
+  const res = await fetch(`${volumeBaseURL(appName, volumeId)}/snapshots`, {
+    method: 'POST',
+    credentials: 'same-origin'
+  })
+  if (res.ok) return
+  throw Object.assign(
+    new Error(`Error creating snapshot for ${appName} volume ${volumeId}`),
+    { res, appName, volumeId }
   )
 }
 

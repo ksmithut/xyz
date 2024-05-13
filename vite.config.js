@@ -2,9 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { TOKEN } from './src/configstore.js'
 
-const API_BASE_URL = 'http://localhost:2345'
-
-const OPEN_URL = new URL('/auth', API_BASE_URL)
+const OPEN_URL = new URL('/auth', 'http://localhost:5173')
 OPEN_URL.searchParams.set('token', TOKEN)
 
 export default defineConfig({
