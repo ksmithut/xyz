@@ -20,7 +20,8 @@ import {
   startMachine,
   waitForState,
   withLease,
-  destroyMachine
+  destroyMachine,
+  listAppVolumes
 } from '../fly.js'
 import { useNotifyError } from './Notifications.jsx'
 import { ScaleCountForm } from './ScaleCountForm.jsx'
@@ -51,6 +52,21 @@ function useMachines(appName, refetchInterval) {
     queryKey: ['appMachines', appName],
     queryFn() {
       return listAppMachines(appName)
+    },
+    refetchInterval
+  })
+}
+
+/**
+ * @param {string} appName
+ * @param {number|false} [refetchInterval]
+ * @returns
+ */
+function useVolumes(appName, refetchInterval) {
+  return useQuery({
+    queryKey: ['appVolumes', appName],
+    queryFn() {
+      return listAppVolumes(appName)
     },
     refetchInterval
   })
@@ -249,6 +265,8 @@ function AppDetails({ app }) {
     pendingActions ? 1000 : refreshInterval
   )
   const machinesList = machines.data ?? []
+  const volumes = useVolumes(app.name, pendingActions ? 1000 : refreshInterval)
+  const volumesList = volumes.data ?? []
 
   React.useLayoutEffect(() => {
     const isIndeterminate =
@@ -303,7 +321,7 @@ function AppDetails({ app }) {
               </div>
             </RadioGroup>
           </div>
-          <div className="relative">
+          <div className="relative flex flex-col gap-3">
             {selectedMachines.size > 0 && (
               <div className="absolute left-14 top-0 flex h-12 items-center space-x-3 bg-white sm:left-12">
                 <button
@@ -464,6 +482,53 @@ function AppDetails({ app }) {
                 ))}
               </tbody>
             </table>
+            {volumesList.length > 0 && (
+              <>
+                <div>
+                  <h3 className="text-lg">Volumes</h3>
+                </div>
+                <table className="min-w-full divide-y divide-gray-300">
+                  <thead>
+                    <tr>
+                      <th
+                        scope="col"
+                        className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0"
+                      >
+                        Volume ID
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                      >
+                        Attached Machine ID
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                      >
+                        Available / Total space
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {volumesList.map((volume) => (
+                      <tr key={volume.id}>
+                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
+                          {volume.id}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {volume.attached_machine_id}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          <FreeSpace volume={volume} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+
             <div className="mb-3 border-t border-gray-300">
               <ScaleCountForm appName={app.name} />
             </div>
@@ -471,6 +536,25 @@ function AppDetails({ app }) {
         </div>
       </div>
     </div>
+  )
+}
+
+const BYTES_TO_GB = 1000 ** 3
+const BYTES_TO_GiB = 1024 ** 3
+
+/**
+ * @param {object} props
+ * @param {import('../fly.js').Volume} props.volume
+ */
+function FreeSpace({ volume }) {
+  const bytesAvailable = volume.blocks_avail * volume.block_size
+  const bytesFree = volume.blocks_free * volume.block_size
+  const bytes = volume.blocks * volume.block_size
+  return (
+    <span>
+      <strong>{(bytesAvailable / BYTES_TO_GB).toFixed(2)}</strong>GB /{' '}
+      <strong>{(bytes / BYTES_TO_GB).toFixed(2)}</strong>GB
+    </span>
   )
 }
 
