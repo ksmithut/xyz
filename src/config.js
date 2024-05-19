@@ -11,8 +11,7 @@ const { values, positionals } = util.parseArgs({
   allowPositionals: true,
   options: {
     hostname: {
-      type: 'string',
-      short: 'h'
+      type: 'string'
     },
     port: {
       type: 'string',
