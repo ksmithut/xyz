@@ -1,17 +1,8 @@
 import React from 'react'
 import cx from 'clsx'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import {
-  Dialog,
-  DialogPanel,
-  DialogTitle,
-  Transition,
-  TransitionChild,
-  RadioGroup,
-  Radio,
-  Label
-} from '@headlessui/react'
-import { XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { RadioGroup, Radio, Label } from '@headlessui/react'
+import { ArrowPathIcon } from '@heroicons/react/24/outline'
 import { Modal } from './Modal.jsx'
 import {
   listAppMachines,

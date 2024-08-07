@@ -11,18 +11,21 @@ export function MachineChecks({ machine, className, children }) {
   const hasCritical = statusGrouping.has('critical')
   const hasWarning = statusGrouping.has('warning')
   const hasPassing = statusGrouping.has('passing')
+  const isStopped = machine.state === 'stopped'
 
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-x-1 rounded-full px-2 py-1 font-mono text-xs font-bold  ring-1 ring-inset',
+        'inline-flex items-center gap-x-1 rounded-full px-2 py-1 font-mono text-xs font-bold ring-1 ring-inset',
         hasCritical
           ? 'bg-red-100 text-red-900 ring-red-200'
           : hasWarning
             ? 'bg-yellow-100 text-yellow-900 ring-yellow-200'
             : hasPassing
               ? 'bg-green-100 text-green-900 ring-green-200'
-              : 'text-gray-900 ring-gray-200',
+              : isStopped
+                ? 'bg-gray-300 text-gray-500 ring-gray-400'
+                : 'text-gray-900 ring-gray-200',
         className
       )}
     >

@@ -58,6 +58,7 @@ export function ScaleCountForm({ appName }) {
      * @param {string[]} params.regions
      */
     async mutationFn({ appName, count, regions }) {
+      if (count === 0 && regions.length === 0) return
       setOutput('')
       const res = await scaleCount(appName, count, { regions })
       for await (const chunk of streamResponse(res)) {
