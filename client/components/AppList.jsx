@@ -333,6 +333,7 @@ function AppDetails({ app }) {
                       className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
                       onClick={() => {
                         restartMachines.mutate(selectedMachines)
+                        setSelectedMachines(new Set())
                         setShowRestartMachinesConfirm(false)
                       }}
                     >
@@ -362,6 +363,7 @@ function AppDetails({ app }) {
                       className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
                       onClick={() => {
                         stopMachines.mutate(selectedMachines)
+                        setSelectedMachines(new Set())
                         setShowStopMachinesConfirm(false)
                       }}
                     >
@@ -377,7 +379,10 @@ function AppDetails({ app }) {
                   type="button"
                   className="inline-flex items-center rounded bg-white px-2 py-1 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-white"
                   disabled={pendingActions}
-                  onClick={() => startMachines.mutate(selectedMachines)}
+                  onClick={() => {
+                    startMachines.mutate(selectedMachines)
+                    setSelectedMachines(new Set())
+                  }}
                 >
                   Start
                 </button>
@@ -399,6 +404,7 @@ function AppDetails({ app }) {
                       className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
                       onClick={() => {
                         destroyMachines.mutate(selectedMachines)
+                        setSelectedMachines(new Set())
                         setShowDestroyMachinesConfirm(false)
                       }}
                     >
