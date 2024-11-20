@@ -13,7 +13,6 @@ import favoritesRouter from './favorites.js'
 import { requireAuth, signIn } from './auth.js'
 
 const PUBLIC_DIR = new URL('../public/', import.meta.url)
-const INDEX_PATH = new URL('index.html', PUBLIC_DIR)
 
 const app = express()
 app.disable('x-powered-by')
@@ -39,9 +38,9 @@ app.use('/api/fly', requireAuth(), flyRouter)
 app.use('/api/favorites', favoritesRouter)
 
 app.use(express.static(PUBLIC_DIR.pathname))
-app.get('/*path', (req, res, next) => {
+app.get('/*t', (req, res, next) => {
   if (!req.accepts('html')) return next()
-  res.sendFile(INDEX_PATH.pathname)
+  res.sendFile('index.html', { root: PUBLIC_DIR.pathname })
 })
 
 app.use(
