@@ -32,12 +32,14 @@ app.use((req, res, next) => {
 app.use(cookieParser())
 
 app.post('/api/auth', express.json(), signIn())
-app.get('/api/auth', requireAuth(), (req, res) => res.end('ok'))
+app.get('/api/auth', requireAuth(), (req, res) => {
+  res.end('ok')
+})
 app.use('/api/fly', requireAuth(), flyRouter)
 app.use('/api/favorites', favoritesRouter)
 
 app.use(express.static(PUBLIC_DIR.pathname))
-app.get('*', (req, res, next) => {
+app.get('/*path', (req, res, next) => {
   if (!req.accepts('html')) return next()
   res.sendFile(INDEX_PATH.pathname)
 })

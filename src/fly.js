@@ -28,7 +28,8 @@ router.post('/cli/apps/:app/scale/count/:count', (req, res) => {
   const regions = url.searchParams.getAll('region')
   const count = Number.parseInt(req.params.count, 10)
   if (Number.isNaN(count) || count < 0) {
-    return res.status(400).send('Invalid count')
+    res.status(400).send('Invalid count')
+    return
   }
   const flags = ['--yes', '--app', req.params.app]
   if (regions.length) flags.push('--region', regions.join(','))
@@ -44,7 +45,8 @@ router.post('/cli/apps/:app/scale/vm/:size', (req, res) => {
   if (vmMemoryRaw) {
     vmMemory = Number.parseInt(vmMemoryRaw, 10)
     if (Number.isNaN(vmMemory) || vmMemory < 0) {
-      return res.status(400).send('Invalid vm_memory')
+      res.status(400).send('Invalid vm_memory')
+      return
     }
   }
   const flags = ['--yes', '--app', req.params.app]

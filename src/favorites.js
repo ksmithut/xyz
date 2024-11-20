@@ -10,9 +10,7 @@ const router = express.Router()
 const GLOBAL_FAVORITES_FILE = path.resolve(CONFIG_DIR, 'xyz.favorites')
 
 router.get('/', async (req, res, next) => {
-  getFavorites()
-    .then((favorites) => res.json(favorites))
-    .catch(next)
+  res.json(await getFavorites())
 })
 
 export default router
