@@ -525,7 +525,7 @@ export async function waitForState(
 
 const volumeSchema = z.object({
   attached_alloc_id: z.string().nullable(),
-  attached_machine_id: z.string(),
+  attached_machine_id: z.string().nullable(),
   auto_backup_enabled: z.boolean(),
   block_size: z.number(),
   blocks: z.number(),
