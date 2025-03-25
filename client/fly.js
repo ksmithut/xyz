@@ -274,17 +274,19 @@ const machineSchema = z
     region: z.string(),
     instance_id: z.string(),
     private_ip: z.string(),
-    config: z.object({
-      guest: z
-        .object({
-          cpu_kind: z.string(),
-          cpus: z.number(),
-          memory_mb: z.number()
-        })
-        .optional(),
-      metadata: z.record(z.string()).optional(),
-      image: z.string().optional()
-    }),
+    config: z
+      .object({
+        guest: z
+          .object({
+            cpu_kind: z.string(),
+            cpus: z.number(),
+            memory_mb: z.number()
+          })
+          .optional(),
+        metadata: z.record(z.string()).optional(),
+        image: z.string().optional()
+      })
+      .nullable(),
     image_ref: z.object({
       registry: z.string(),
       repository: z.string(),
