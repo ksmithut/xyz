@@ -596,7 +596,7 @@ function MachineRows({ machine, selected, showAllDetails, onChange }) {
           {machine.region}
         </td>
         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-          {machine.config.guest && (
+          {machine.config?.guest && (
             <span>
               {machine.config.guest.cpu_kind}-cpu-
               {machine.config.guest.cpus}x:
